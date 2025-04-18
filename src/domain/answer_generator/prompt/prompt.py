@@ -1,4 +1,4 @@
-
+from __future__ import annotations
 SYSTEM_MESSAGE = """
 <role>You are an AI assistant providing final answers based on retrieved information.</role>
 

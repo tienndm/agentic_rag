@@ -1,10 +1,12 @@
-from shared.base import BaseService
-from shared.logging import get_logger
-from shared.settings import Settings
-from infra.llm import LLMService
+from __future__ import annotations
+
 from domain.answer_generator.service import AnswerGenerator
 from domain.get_fact.service import GetFactService
 from domain.planning.service import PlanningService
+from infra.llm import LLMService
+from shared.base import BaseService
+from shared.logging import get_logger
+from shared.settings import Settings
 
 logger = get_logger(__name__)
 
@@ -19,17 +21,17 @@ class QuerierService(BaseService):
     @property
     def answer_generator(self) -> AnswerGenerator:
         return AnswerGenerator(
-            settings=self.settings.llmSettings, llm_service=self.llm_service
+            settings=self.settings.llmSettings, llm_service=self.llm_service,
         )
 
     @property
     def get_fact(self) -> GetFactService:
         return GetFactService(
-            settings=self.settings.llmSettings, llm_service=self.llm_service
+            settings=self.settings.llmSettings, llm_service=self.llm_service,
         )
 
     @property
     def planning_service(self) -> PlanningService:
         return PlanningService(
-            settings=self.settings.llmSettings, llm_service=self.llm_service
+            settings=self.settings.llmSettings, llm_service=self.llm_service,
         )

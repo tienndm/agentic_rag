@@ -1,3 +1,3 @@
 from __future__ import annotations
 
-from .service import RerankService
+from .queries import queries_router

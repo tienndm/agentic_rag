@@ -1,9 +1,12 @@
+from __future__ import annotations
+
+
 class Memory:
     memory = {
-        "fact": None,
-        "plan": None,
-        "action": None,
-        "product_specs": None,
+        'fact': None,
+        'plan': None,
+        'action': None,
+        'product_specs': None,
     }
 
     @classmethod
@@ -17,8 +20,8 @@ class Memory:
     @classmethod
     def clear_memory(cls):
         cls.memory = {
-            "fact": None,
-            "plan": None,
-            "action": None,
-            "product_specs": None,
+            'fact': None,
+            'plan': None,
+            'action': None,
+            'product_specs': None,
         }

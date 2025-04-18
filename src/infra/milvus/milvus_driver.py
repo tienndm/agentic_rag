@@ -1,18 +1,25 @@
+from __future__ import annotations
+
 import time
 import uuid
-from typing import Dict, List, Optional, Any, Union, Tuple
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
 
-from pymilvus import Collection, connections, utility
-from pymilvus import CollectionSchema, FieldSchema, DataType
-
+from pymilvus import Collection
+from pymilvus import CollectionSchema
+from pymilvus import connections
+from pymilvus import DataType
+from pymilvus import FieldSchema
+from pymilvus import utility
 from shared.logging import logger
-from .models import (
-    MilvusConfig,
-    MilvusCollection,
-    MilvusDocument,
-    MilvusSearchResult,
-    MilvusQueryResponse,
-)
+
+from .models import MilvusCollection
+from .models import MilvusConfig
+from .models import MilvusDocument
+from .models import MilvusQueryResponse
+from .models import MilvusSearchResult
 
 
 class MilvusDriver:
@@ -31,25 +38,25 @@ class MilvusDriver:
         """Establish connection to Milvus server"""
         try:
             connections.connect(
-                alias="default",
+                alias='default',
                 host=self.config.host,
                 port=self.config.port,
                 user=self.config.user,
                 password=self.config.password,
                 secure=self.config.secure,
             )
-            logger.info(f"Connected to Milvus at {self.config.host}:{self.config.port}")
+            logger.info(f'Connected to Milvus at {self.config.host}:{self.config.port}')
         except Exception as e:
-            logger.error(f"Failed to connect to Milvus: {str(e)}")
+            logger.error(f'Failed to connect to Milvus: {str(e)}')
             raise
 
     def disconnect(self) -> None:
         """Close connection to Milvus server"""
         try:
-            connections.disconnect("default")
-            logger.info("Disconnected from Milvus")
+            connections.disconnect('default')
+            logger.info('Disconnected from Milvus')
         except Exception as e:
-            logger.error(f"Failed to disconnect from Milvus: {str(e)}")
+            logger.error(f'Failed to disconnect from Milvus: {str(e)}')
 
     def collection_exists(self, collection_name: str) -> bool:
         """Check if a collection exists
@@ -70,41 +77,46 @@ class MilvusDriver:
         """
         if self.collection_exists(collection_config.collection_name):
             logger.warning(
-                f"Collection {collection_config.collection_name} already exists"
+                f'Collection {collection_config.collection_name} already exists',
             )
             return
 
         # Define fields for the collection
         fields = [
             FieldSchema(
-                name="id", dtype=DataType.VARCHAR, is_primary=True, max_length=36
+                name='id',
+                dtype=DataType.VARCHAR,
+                is_primary=True,
+                max_length=36,
             ),
             FieldSchema(
-                name="embedding",
+                name='embedding',
                 dtype=DataType.FLOAT_VECTOR,
                 dim=collection_config.dimension,
             ),
-            FieldSchema(name="metadata", dtype=DataType.JSON),
+            FieldSchema(name='metadata', dtype=DataType.JSON),
         ]
 
         # Create schema and collection
         schema = CollectionSchema(fields)
         collection = Collection(
-            name=collection_config.collection_name, schema=schema, using="default"
+            name=collection_config.collection_name,
+            schema=schema,
+            using='default',
         )
 
         # Create index
         collection.create_index(
-            field_name="embedding",
+            field_name='embedding',
             index_params={
-                "index_type": collection_config.index_type,
-                "metric_type": collection_config.metric_type,
-                "params": collection_config.index_params,
+                'index_type': collection_config.index_type,
+                'metric_type': collection_config.metric_type,
+                'params': collection_config.index_params,
             },
         )
 
         logger.info(
-            f"Created collection {collection_config.collection_name} with dimension {collection_config.dimension}"
+            f'Created collection {collection_config.collection_name} with dimension {collection_config.dimension}',
         )
 
     def drop_collection(self, collection_name: str) -> None:
@@ -114,14 +126,16 @@ class MilvusDriver:
             collection_name: Name of the collection to drop
         """
         if not self.collection_exists(collection_name):
-            logger.warning(f"Collection {collection_name} does not exist")
+            logger.warning(f'Collection {collection_name} does not exist')
             return
 
         utility.drop_collection(collection_name)
-        logger.info(f"Dropped collection {collection_name}")
+        logger.info(f'Dropped collection {collection_name}')
 
     def insert_documents(
-        self, collection_name: str, documents: List[MilvusDocument]
+        self,
+        collection_name: str,
+        documents: List[MilvusDocument],
     ) -> List[str]:
         """Insert documents into a collection
 
@@ -133,7 +147,7 @@ class MilvusDriver:
             List of document IDs
         """
         if not self.collection_exists(collection_name):
-            raise ValueError(f"Collection {collection_name} does not exist")
+            raise ValueError(f'Collection {collection_name} does not exist')
 
         collection = Collection(collection_name)
 
@@ -152,7 +166,7 @@ class MilvusDriver:
         collection.insert([ids, vectors, metadata_list])
         collection.flush()
 
-        logger.info(f"Inserted {len(documents)} documents into {collection_name}")
+        logger.info(f'Inserted {len(documents)} documents into {collection_name}')
         return ids
 
     def search(
@@ -174,14 +188,14 @@ class MilvusDriver:
             MilvusQueryResponse containing search results
         """
         if not self.collection_exists(collection_name):
-            raise ValueError(f"Collection {collection_name} does not exist")
+            raise ValueError(f'Collection {collection_name} does not exist')
 
         collection = Collection(collection_name)
         collection.load()
 
         # Get default search params if not provided
         if search_params is None:
-            search_params = {"nprobe": 16}
+            search_params = {'nprobe': 16}
 
         # Start timing
         start_time = time.time()
@@ -189,10 +203,10 @@ class MilvusDriver:
         # Execute search
         results = collection.search(
             data=[query_vector],
-            anns_field="embedding",
+            anns_field='embedding',
             param=search_params,
             limit=top_k,
-            output_fields=["metadata"],
+            output_fields=['metadata'],
         )
 
         # Calculate time taken
@@ -203,8 +217,10 @@ class MilvusDriver:
         for hit in results[0]:
             search_results.append(
                 MilvusSearchResult(
-                    id=hit.id, score=hit.score, metadata=hit.entity.get("metadata", {})
-                )
+                    id=hit.id,
+                    score=hit.score,
+                    metadata=hit.entity.get('metadata', {}),
+                ),
             )
 
         return MilvusQueryResponse(results=search_results, took_ms=took_ms)
@@ -217,12 +233,12 @@ class MilvusDriver:
             ids: List of document IDs to delete
         """
         if not self.collection_exists(collection_name):
-            raise ValueError(f"Collection {collection_name} does not exist")
+            raise ValueError(f'Collection {collection_name} does not exist')
 
         collection = Collection(collection_name)
-        collection.delete(expr=f"id in {ids}")
+        collection.delete(expr=f'id in {ids}')
 
-        logger.info(f"Deleted {len(ids)} documents from {collection_name}")
+        logger.info(f'Deleted {len(ids)} documents from {collection_name}')
 
     def get_collection_stats(self, collection_name: str) -> Dict[str, Any]:
         """Get statistics about a collection
@@ -234,7 +250,7 @@ class MilvusDriver:
             Dictionary containing collection statistics
         """
         if not self.collection_exists(collection_name):
-            raise ValueError(f"Collection {collection_name} does not exist")
+            raise ValueError(f'Collection {collection_name} does not exist')
 
         collection = Collection(collection_name)
         stats = collection.get_stats()

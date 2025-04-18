@@ -1,5 +1,12 @@
-from typing import Dict, List, Optional, Union, Any
-from pydantic import BaseModel, Field
+from __future__ import annotations
+
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+
+from pydantic import BaseModel
+from pydantic import Field
 
 
 class MilvusCollection(BaseModel):
@@ -7,10 +14,10 @@ class MilvusCollection(BaseModel):
 
     collection_name: str
     dimension: int
-    metric_type: str = "COSINE"
-    index_type: str = "IVF_FLAT"
-    index_params: Dict[str, Any] = Field(default_factory=lambda: {"nlist": 1024})
-    search_params: Dict[str, Any] = Field(default_factory=lambda: {"nprobe": 16})
+    metric_type: str = 'COSINE'
+    index_type: str = 'IVF_FLAT'
+    index_params: Dict[str, Any] = Field(default_factory=lambda: {'nlist': 1024})
+    search_params: Dict[str, Any] = Field(default_factory=lambda: {'nprobe': 16})
 
 
 class MilvusDocument(BaseModel):
@@ -39,7 +46,7 @@ class MilvusQueryResponse(BaseModel):
 class MilvusConfig(BaseModel):
     """Configuration for Milvus connection"""
 
-    host: str = "localhost"
+    host: str = 'localhost'
     port: int = 19530
     user: Optional[str] = None
     password: Optional[str] = None

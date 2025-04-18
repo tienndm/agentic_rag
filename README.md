@@ -35,7 +35,7 @@ The project is structured using clean architecture principles:
  ┣ 📂 domain          # Core domain services implementing RAG capabilities
  │  ┣ 📂 answer_generator  # Generates final answers based on context
  │  ┣ 📂 get_fact          # Fact verification services
- │  ┣ 📂 memory            # Short-term memory management 
+ │  ┣ 📂 memory            # Short-term memory management
  │  ┣ 📂 planning          # Agent planning capabilities
  │  ┣ 📂 rerank            # Re-ranking retrieved documents
  │  ┣ 📂 retrive           # Document retrieval services

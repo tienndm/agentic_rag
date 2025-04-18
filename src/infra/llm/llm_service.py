@@ -1,9 +1,16 @@
-from typing import Optional, Any
+from __future__ import annotations
 
-from shared.base import BaseModel, BaseService
+from typing import Any
+from typing import Optional
+
+from shared.base import BaseModel
+from shared.base import BaseService
 from shared.settings import LLMSettings
 
-from .datatypes import Message, BatchMessage, Response, BatchResponse
+from .datatypes import BatchMessage
+from .datatypes import BatchResponse
+from .datatypes import Message
+from .datatypes import Response
 
 
 class LLMInput(BaseModel):
@@ -28,9 +35,9 @@ class LLMService(BaseService):
     def header(self) -> dict[str, str]:
         """Header for the LLM request"""
         return {
-            "accept": "application/json",
-            "Content-Type": "application/json",
+            'accept': 'application/json',
+            'Content-Type': 'application/json',
         }
 
     def process(self, input: LLMInput) -> LLMOutput:
-        raise NotImplementedError("process method not implemented")
+        raise NotImplementedError('process method not implemented')

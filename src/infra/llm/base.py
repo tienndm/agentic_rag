@@ -1,10 +1,16 @@
+from __future__ import annotations
+
 from abc import abstractmethod
-from typing import Optional, Any
+from typing import Any
+from typing import Optional
 
-from shared.base import BaseModel, BaseService
-from shared.settings import LLMSettings
+from shared.base import BaseModel
+from shared.base import BaseService
 
-from .datatypes import Message, BatchMessage, Response, BatchResponse
+from .datatypes import BatchMessage
+from .datatypes import BatchResponse
+from .datatypes import Message
+from .datatypes import Response
 
 
 class LLMBaseInput(BaseModel):
@@ -25,4 +31,4 @@ class LLMBaseOutput(BaseModel):
 class LLMBaseService(BaseService):
     @abstractmethod
     def process(self, input: LLMBaseInput) -> LLMBaseOutput:
-        raise NotImplementedError("process method not implemented")
+        raise NotImplementedError('process method not implemented')

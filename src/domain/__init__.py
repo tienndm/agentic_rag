@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from answer_generator import AnswerGenerator
 from get_fact import GetFactService
 from planning import PlanningService
@@ -6,10 +8,10 @@ from retrive import RetriveService
 from web_searching import WebSearchingService
 
 __all__ = [
-    "AnswerGenerator",
-    "GetFactService",
-    "PlanningService",
-    "RerankService",
-    "RetriveService",
-    "WebSearchingService",
+    'AnswerGenerator',
+    'GetFactService',
+    'PlanningService',
+    'RerankService',
+    'RetriveService',
+    'WebSearchingService',
 ]

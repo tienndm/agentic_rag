@@ -1,7 +1,10 @@
-from shared.base import BaseModel, BaseService
+from __future__ import annotations
+
+from infra.llm import LLMBaseService
+from shared.base import BaseModel
+from shared.base import BaseService
 from shared.logging import get_logger
 from shared.settings import LLMSettings
-from infra.llm import LLMBaseService
 
 
 logger = get_logger(__name__)
@@ -22,4 +25,4 @@ class AnswerGenerator(BaseService):
     settings: LLMSettings
 
     async def process(self, input: AnswerGeneratorInput) -> AnswerGeneratorOutput:
-        raise NotImplementedError("process method not implemented")
+        raise NotImplementedError('process method not implemented')

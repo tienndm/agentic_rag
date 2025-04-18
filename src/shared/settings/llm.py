@@ -1,5 +1,5 @@
-from pydantic import HttpUrl
-from pydantic import SecretStr
+from __future__ import annotations
+
 from shared.base import BaseModel
 
 
