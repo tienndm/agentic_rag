@@ -8,7 +8,7 @@ from shared.logging import get_logger
 from shared.logging import setup_logging
 from starlette.responses import RedirectResponse
 
-setup_logging(json_logs=False, log_level='ERROR')
+setup_logging(json_logs=False, log_level='INFO')
 logger = get_logger('api')
 
 app = FastAPI(

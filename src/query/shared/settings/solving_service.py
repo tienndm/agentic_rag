@@ -3,7 +3,7 @@ from __future__ import annotations
 from shared.base import BaseModel
 
 
-class LLMSettings(BaseModel):
+class SolvingServiceSettings(BaseModel):
     """Settings for the LLM (Large Language Model)"""
 
     model: str

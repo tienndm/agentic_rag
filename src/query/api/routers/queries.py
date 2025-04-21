@@ -1,14 +1,18 @@
 from __future__ import annotations
 
+from application.query_service import ApplicationInput
+from application.query_service import QuerierService
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from shared.logging import get_logger
+from shared.utils import get_settings
 
 from ..helpers import ExceptionHandler
 from ..models.queries import QuerierInput
 
 queries_router = APIRouter()
 logger = get_logger(__name__)
+settings = get_settings()
 
 
 @queries_router.post(
@@ -22,7 +26,7 @@ async def query(inputs: QuerierInput) -> JSONResponse:
     )
 
     try:
-        pass
+        application = QuerierService(settings=settings)
     except Exception as e:
         return exception_handler.handle_exception(
             f'Error during application initialization: {e}',
@@ -32,7 +36,10 @@ async def query(inputs: QuerierInput) -> JSONResponse:
         )
 
     try:
-        pass
+        inputs = ApplicationInput(
+            query=inputs.query,
+        )
+        output = await application.process(inputs)
     except Exception as e:
         return exception_handler.handle_exception(
             str(e),
@@ -40,7 +47,7 @@ async def query(inputs: QuerierInput) -> JSONResponse:
                 'query': query,
             },
         )
-    return
+    return exception_handler.handle_success(output.model_dump())
 
 
 @queries_router.get('/helthz', tags=['querier'])
