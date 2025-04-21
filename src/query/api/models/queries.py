@@ -5,7 +5,3 @@ from shared.base import BaseModel
 
 class QuerierInput(BaseModel):
     query: str
-
-
-class QuerierOutput(BaseModel):
-    answer: str = ''

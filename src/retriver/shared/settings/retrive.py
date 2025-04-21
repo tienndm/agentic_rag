@@ -1,0 +1,7 @@
+from __future__ import annotations
+
+from shared.base import BaseModel
+
+
+class Retrive(BaseModel):
+    max_tries: int

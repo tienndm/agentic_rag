@@ -30,21 +30,20 @@ async def query(inputs: QuerierInput) -> JSONResponse:
     except Exception as e:
         return exception_handler.handle_exception(
             f'Error during application initialization: {e}',
-            extra={
-                'query': query,
-            },
+            extra={},
         )
 
     try:
-        inputs = ApplicationInput(
-            query=inputs.query,
+        output = await application.process(
+            ApplicationInput(
+                query=inputs.query,
+            ),
         )
-        output = await application.process(inputs)
     except Exception as e:
         return exception_handler.handle_exception(
             str(e),
             extra={
-                'query': query,
+                'inputs': inputs,
             },
         )
     return exception_handler.handle_success(output.model_dump())

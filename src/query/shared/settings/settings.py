@@ -14,9 +14,7 @@ load_dotenv(find_dotenv('.env'), override=True)
 
 
 class Settings(BaseSettings):
-    llmSettings: LLMSettings = LLMSettings()
-    # retriveSettings: RetriveServiceSettings = RetriveServiceSettings()
-    # solvingSettings: SolvingServiceSettings = SolvingServiceSettings()
+    llm: LLMSettings
 
     class Config:
         env_file = '.env'

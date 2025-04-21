@@ -41,13 +41,3 @@ class MilvusQueryResponse(BaseModel):
 
     results: List[MilvusSearchResult]
     took_ms: float
-
-
-class MilvusConfig(BaseModel):
-    """Configuration for Milvus connection"""
-
-    host: str = 'localhost'
-    port: int = 19530
-    user: Optional[str] = None
-    password: Optional[str] = None
-    secure: bool = False

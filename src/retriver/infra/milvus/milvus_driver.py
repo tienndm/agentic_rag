@@ -14,9 +14,9 @@ from pymilvus import DataType
 from pymilvus import FieldSchema
 from pymilvus import utility
 from shared.logging import logger
+from shared.settings import MilvusSettings
 
 from .models import MilvusCollection
-from .models import MilvusConfig
 from .models import MilvusDocument
 from .models import MilvusQueryResponse
 from .models import MilvusSearchResult
@@ -25,13 +25,13 @@ from .models import MilvusSearchResult
 class MilvusDriver:
     """Driver for interacting with Milvus vector database"""
 
-    def __init__(self, config: MilvusConfig):
+    def __init__(self, settings: MilvusSettings):
         """Initialize the Milvus driver with given configuration
 
         Args:
             config: Configuration for Milvus connection
         """
-        self.config = config
+        self.settings = settings
         self._connect()
 
     def _connect(self) -> None:
@@ -39,13 +39,15 @@ class MilvusDriver:
         try:
             connections.connect(
                 alias='default',
-                host=self.config.host,
-                port=self.config.port,
-                user=self.config.user,
-                password=self.config.password,
-                secure=self.config.secure,
+                host=self.settings.host,
+                port=self.settings.port,
+                user=self.settings.user,
+                password=self.settings.password,
+                secure=self.settings.secure,
             )
-            logger.info(f'Connected to Milvus at {self.config.host}:{self.config.port}')
+            logger.info(
+                f'Connected to Milvus at {self.settings.host}:{self.settings.port}',
+            )
         except Exception as e:
             logger.error(f'Failed to connect to Milvus: {str(e)}')
             raise
@@ -193,14 +195,11 @@ class MilvusDriver:
         collection = Collection(collection_name)
         collection.load()
 
-        # Get default search params if not provided
         if search_params is None:
             search_params = {'nprobe': 16}
 
-        # Start timing
         start_time = time.time()
 
-        # Execute search
         results = collection.search(
             data=[query_vector],
             anns_field='embedding',
@@ -209,10 +208,8 @@ class MilvusDriver:
             output_fields=['metadata'],
         )
 
-        # Calculate time taken
         took_ms = (time.time() - start_time) * 1000
 
-        # Format results
         search_results = []
         for hit in results[0]:
             search_results.append(

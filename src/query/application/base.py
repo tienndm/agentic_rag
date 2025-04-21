@@ -13,4 +13,4 @@ class ApplicationOutput(BaseModel):
     """Output for the application"""
 
     answer: str
-    metadata: dict[str, str] = {}
+    metadata: dict[str, str] | None = None

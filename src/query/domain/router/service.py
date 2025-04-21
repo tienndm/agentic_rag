@@ -51,16 +51,14 @@ class RouterServiceV1(BaseService):
             raise e
 
         try:
-            llm_input = LLMBaseInput(
-                message=messages,
+            response = await self.llm_model.process(
+                LLMBaseInput(
+                    messages=messages,
+                ),
             )
-            response = await self.llm_model.process(llm_input)
-            # TODO: parse the response to get the route
-            route = response.response
-            metadata = response.metadata
             return BaseRouterOutput(
-                route=route,
-                metadata=metadata,
+                route=response.response,
+                metadata=response.metadata,
             )
 
         except Exception as e:

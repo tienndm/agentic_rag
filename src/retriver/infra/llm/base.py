@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from typing import Any
-from typing import Optional
 
 from shared.base import BaseModel
 from shared.base import BaseService
@@ -14,13 +13,7 @@ from .datatypes import Response
 
 
 class LLMBaseInput(BaseModel):
-    message: Message | BatchMessage
-    frequency_penalty: Optional[int] = None
-    n: Optional[int] = None
-    model: Optional[str] = None
-    presence_penalty: Optional[int] = None
-    max_completion_tokens: Optional[int] = None
-    temperature: Optional[float] = None
+    messages: Message | BatchMessage
 
 
 class LLMBaseOutput(BaseModel):

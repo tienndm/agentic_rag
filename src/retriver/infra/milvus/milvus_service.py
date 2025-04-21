@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from functools import lru_cache
 from typing import Any
 from typing import Dict
 from typing import List
@@ -8,10 +7,10 @@ from typing import Optional
 
 from shared.base import BaseService
 from shared.logging import logger
+from shared.settings import MilvusSettings
 
 from .milvus_driver import MilvusDriver
 from .models import MilvusCollection
-from .models import MilvusConfig
 from .models import MilvusDocument
 from .models import MilvusQueryResponse
 
@@ -19,15 +18,15 @@ from .models import MilvusQueryResponse
 class MilvusService(BaseService):
     """Service for interacting with Milvus vector database"""
 
-    def __init__(self, config: MilvusConfig):
+    def __init__(self, settings: MilvusSettings):
         """Initialize the Milvus service with given configuration
 
         Args:
             config: Configuration for Milvus connection
         """
         super().__init__()
-        self.config = config
-        self.driver = MilvusDriver(config=config)
+        self.settings = settings
+        self.driver = MilvusDriver(config=settings)
 
     def process(self, inputs: Any) -> Any:
         """Process inputs based on operation type
@@ -93,7 +92,9 @@ class MilvusService(BaseService):
         return self.driver.collection_exists(collection_name)
 
     def insert_documents(
-        self, collection_name: str, documents: List[MilvusDocument],
+        self,
+        collection_name: str,
+        documents: List[MilvusDocument],
     ) -> List[str]:
         """Insert documents into a collection
 
@@ -168,7 +169,9 @@ class MilvusService(BaseService):
             raise
 
     def upsert_documents(
-        self, collection_name: str, documents: List[MilvusDocument],
+        self,
+        collection_name: str,
+        documents: List[MilvusDocument],
     ) -> List[str]:
         """Upsert documents (insert or update) into a collection
 
@@ -179,20 +182,16 @@ class MilvusService(BaseService):
         Returns:
             List of document IDs
         """
-        # First delete any documents with matching IDs
         existing_ids = [doc.id for doc in documents if doc.id is not None]
         if existing_ids:
             self.delete_by_ids(collection_name, existing_ids)
 
-        # Then insert all documents
         return self.insert_documents(collection_name, documents)
 
     def batch_search(
         self,
         collection_name: str,
         query_vectors: List[List[float]],
-        top_k: int = 10,
-        search_params: Optional[Dict[str, Any]] = None,
     ) -> List[MilvusQueryResponse]:
         """Perform batch search for multiple query vectors
 
@@ -210,24 +209,9 @@ class MilvusService(BaseService):
             result = self.search(
                 collection_name=collection_name,
                 query_vector=vector,
-                top_k=top_k,
-                search_params=search_params,
+                top_k=self.settings.top_k,
+                search_params=self.settings.search_params,
             )
             results.append(result)
 
         return results
-
-
-@lru_cache(maxsize=1)
-def get_milvus_service(host: str = 'localhost', port: int = 19530) -> MilvusService:
-    """Get a singleton instance of MilvusService
-
-    Args:
-        host: Milvus host
-        port: Milvus port
-
-    Returns:
-        MilvusService instance
-    """
-    config = MilvusConfig(host=host, port=port)
-    return MilvusService(config=config)

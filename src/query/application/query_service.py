@@ -9,6 +9,7 @@ from shared.settings import Settings
 
 from .base import ApplicationInput
 from .base import ApplicationOutput
+
 # from domain import BaseRouterOutput
 # from infra.llm import LLMBaseInput
 # from infra.llm import LLMBaseOutput
@@ -23,7 +24,7 @@ class QuerierService(BaseService):
 
     @property
     def llm_service(self) -> LLMService:
-        return LLMService(settings=self.settings.llmSettings)
+        return LLMService(settings=self.settings.llm)
 
     @property
     def router_service(self) -> RouterService:
@@ -38,10 +39,9 @@ class QuerierService(BaseService):
     #     return SolvingServiceV1(settings=self.settings.solvingSettings)
 
     async def process(self, inputs: ApplicationInput) -> ApplicationOutput:
-        router_inputs = BaseRouterInput(
-            query=inputs.query,
+        router_response = await self.router_service.process(
+            BaseRouterInput(query=inputs.query),
         )
-        router_response = await self.router_service.process(router_inputs)
         route = router_response.route.split(':')[1]
         return ApplicationOutput(
             answer=route,

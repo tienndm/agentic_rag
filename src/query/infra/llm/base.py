@@ -13,7 +13,7 @@ from .datatypes import Response
 
 
 class LLMBaseInput(BaseModel):
-    message: Message | BatchMessage
+    messages: Message | BatchMessage
 
 
 class LLMBaseOutput(BaseModel):
