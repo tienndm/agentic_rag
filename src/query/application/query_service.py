@@ -3,17 +3,18 @@ from __future__ import annotations
 from domain import BaseRouterInput
 from domain import RouterService
 from infra.llm import LLMService
+from infra.retriver import BaseRetriveInput
+from infra.retriver import RetriverServiceV1
 from shared.base import BaseService
 from shared.logging import get_logger
 from shared.settings import Settings
 
 from .base import ApplicationInput
 from .base import ApplicationOutput
-
 # from domain import BaseRouterOutput
 # from infra.llm import LLMBaseInput
 # from infra.llm import LLMBaseOutput
-# from infra.retriver import RetriverServiceV1
+
 # from infra.solving import SolvingServiceV1
 
 logger = get_logger(__name__)
@@ -30,9 +31,9 @@ class QuerierService(BaseService):
     def router_service(self) -> RouterService:
         return RouterService(llm_model=self.llm_service)
 
-    # @property
-    # def retrive_service(self) -> RetriverServiceV1:
-    #     return RetriverServiceV1(settings=self.settings.retriveSettings)
+    @property
+    def retrive_service(self) -> RetriverServiceV1:
+        return RetriverServiceV1(settings=self.settings.retriver)
 
     # @property
     # def solving_service(self) -> SolvingServiceV1:
@@ -42,8 +43,16 @@ class QuerierService(BaseService):
         router_response = await self.router_service.process(
             BaseRouterInput(query=inputs.query),
         )
-        route = router_response.route.split(':')[1]
+        route = router_response.route.split(':')[1].lower()
+        if route == 'retriever_service':
+            retrive_response = await self.retrive_service.process(
+                BaseRetriveInput(query=inputs.query),
+            )
+            return ApplicationOutput(
+                answer=retrive_response.answer,
+                metadata=retrive_response.metadata,
+            )
         return ApplicationOutput(
-            answer=route,
-            prompt_tokens=router_response.metadata,
+            answer='',
+            metadata={},
         )

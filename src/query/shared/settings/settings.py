@@ -5,8 +5,8 @@ from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
 
 from .llm import LLMSettings
+from .retrive_service import RetriveServiceSettings
 
-# from .retrive_service import RetriveServiceSettings
 # from .solving_service import SolvingServiceSettings
 
 # Load environment variables from .env file
@@ -15,6 +15,7 @@ load_dotenv(find_dotenv('.env'), override=True)
 
 class Settings(BaseSettings):
     llm: LLMSettings
+    retriver: RetriveServiceSettings
 
     class Config:
         env_file = '.env'

@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   # Main application service
-  app:
+  query-service:
     build:
       context: ../src
       dockerfile: dockerfile
@@ -10,6 +10,26 @@ services:
       - ../src:/app
     ports:
       - "8000:8000"
+    environment:
+      - PYTHONPATH=/app
+      - MILVUS_HOST=milvus-standalone
+      - MILVUS_PORT=19530
+    depends_on:
+      - milvus-standalone
+      - etcd
+      - minio
+    networks:
+      - agentic-network
+    restart: unless-stopped
+
+  embed-service:
+    build:
+      context: ../src
+      dockerfile: embed/Dockerfile
+    volumes:
+      - ../src:/app
+    ports:
+      - "8001:8000"
     environment:
       - PYTHONPATH=/app
       - MILVUS_HOST=milvus-standalone

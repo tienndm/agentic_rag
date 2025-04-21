@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from application.retriver_application import ApplicationInput
+from application.retriver_application import RetriveApplication
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from shared.logging import get_logger
@@ -21,7 +23,7 @@ async def retrive(inputs: RetriveInput) -> JSONResponse:
     )
 
     try:
-        pass
+        application = RetriveApplication(settings=settings)
     except Exception as e:
         return excepttion_handler.handle_exception(
             f'Error during application initialization: {e}',
@@ -29,13 +31,17 @@ async def retrive(inputs: RetriveInput) -> JSONResponse:
         )
 
     try:
-        pass
+        response = application.process(
+            inputs=ApplicationInput(
+                query=inputs.query,
+            ),
+        )
     except Exception as e:
         return excepttion_handler.handle_exception(
             f'Error during application initialization: {e}',
             extra={'inputs': inputs},
         )
-    return excepttion_handler.handle_success('Success', extra={})
+    return excepttion_handler.handle_success(response.model_dump())
 
 
 @retrive_router.get('/helthz', tags=['retriver'])

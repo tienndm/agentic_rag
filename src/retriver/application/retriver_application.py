@@ -15,6 +15,7 @@ from shared.settings import Settings
 
 from .base import ApplicationInput
 from .base import ApplicationOutput
+
 # from domain.processor.retrive import RetriveInput
 
 logger = get_logger(__name__)
@@ -22,7 +23,10 @@ logger = get_logger(__name__)
 
 class RetriveApplication(BaseService):
     settings: Settings
-    memory: Memory
+
+    @property
+    def memory(self) -> Memory:
+        return Memory()
 
     @property
     def llm_service(self) -> LLMService:
