@@ -15,10 +15,10 @@ load_dotenv(find_dotenv('.env'), override=True)
 
 class Settings(BaseSettings):
     llm: LLMSettings
+    embed: EmbedSettings
     retrive: Retrive
     rerank: RerankSettings
-    milvus_settings: MilvusSettings
-    embed: EmbedSettings
+    milvus: MilvusSettings
 
     class Config:
         env_nested_delimiter = '__'

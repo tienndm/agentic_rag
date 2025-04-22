@@ -8,7 +8,7 @@ from sentence_transformers import CrossEncoder
 from shared.base import BaseModel
 from shared.base import BaseService
 from shared.logging import get_logger
-from shared.settings import Settings
+from shared.settings import RerankSettings
 
 
 logger = get_logger(__name__)
@@ -26,7 +26,7 @@ class RerankOutput(BaseModel):
 
 
 class RerankService(BaseService):
-    settings: Settings
+    settings: RerankSettings
 
     @property
     def model(self) -> CrossEncoder:

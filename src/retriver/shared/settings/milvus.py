@@ -12,8 +12,8 @@ from ..base import BaseModel
 class MilvusSettings(BaseModel):
     host: str
     port: int
-    user: Optional[str]
-    password: Optional[str]
+    user: Optional[str] = None
+    password: Optional[str] = None
     db_name: str
     collection_name: str
     anns_field: str

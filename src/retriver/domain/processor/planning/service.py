@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import json
+from typing import Dict
+from typing import List
+
 from infra.llm import CompletionMessage
 from infra.llm import LLMBaseInput
 from infra.llm import LLMBaseService
@@ -20,35 +24,12 @@ class PlanningInput(BaseModel):
 
 
 class PlanningOutput(BaseModel):
-    # plan: list[str]
-    plan: str
+    plan: List[Dict]
     metadata: dict[str, str] | None = None
 
 
 class PlanningService(BaseService):
     llm_model: LLMBaseService
-
-    def parse_plan(self, output: str) -> list[str]:
-        """
-        Parse the planning output into a list of individual steps.
-
-        Args:
-            output (str): The raw output from the planning prompt
-
-        Returns:
-            List[str]: List of extracted step contents
-        """
-        output = output.strip()
-
-        steps = []
-        step_markers = [marker for marker in output.split('[step') if marker.strip()]
-        for marker in step_markers:
-            parts = marker.split(']', 1)
-            if len(parts) > 1:
-                step_content = parts[1].strip()
-                steps.append(step_content)
-
-        return steps
 
     async def process(self, inputs: PlanningInput) -> PlanningOutput | None:
         try:
@@ -78,9 +59,10 @@ class PlanningService(BaseService):
                     messages=messages,
                 ),
             )
-            # plan_steps = self.parse_plan(response.response)
+            plan_steps = self.parse_plan(response.response)
+            logger.info(f'Plan steps: {plan_steps}')
             return PlanningOutput(
-                plan=response.response,
+                plan=plan_steps,
                 metadata=response.metadata,
             )
         except Exception as e:
@@ -91,3 +73,23 @@ class PlanningService(BaseService):
                 },
             )
             raise e
+
+    def parse_plan(self, plan_text: str) -> str:
+        """
+        Parse a plan text that might be in JSON format.
+        Returns the parsed JSON as a string.
+        """
+        try:
+            start_idx = plan_text.find('[')
+            end_idx = plan_text.rfind(']') + 1
+
+            if start_idx >= 0 and end_idx > start_idx:
+                json_text = plan_text[start_idx:end_idx]
+                return json.loads(json_text)
+            return plan_text
+        except json.JSONDecodeError as e:
+            logger.warning(f'Failed to parse plan as JSON: {e}')
+            return plan_text
+        except Exception as e:
+            logger.warning(f'Unexpected error parsing plan: {e}')
+            return plan_text

@@ -12,7 +12,7 @@ class EmbedInput(BaseModel):
 
 
 class EmbedOutput(BaseModel):
-    embeddings: list[dict[np.ndarray]]
+    embeddings: list[dict[str, np.ndarray]]
 
 
 class EmbedService(BaseService):

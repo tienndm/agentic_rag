@@ -60,7 +60,7 @@ class WebSearchingService(BaseService):
         if not search_results:
             logger.warning('No search results found')
             return WebSearchingOutput(
-                answer='No results found for the given query.', num_tokens=0, sources=[],
+                answer='No results found for the given query.', sources=[],
             )
 
         if input.fetch_content:
@@ -72,9 +72,8 @@ class WebSearchingService(BaseService):
 
         llm_response = await self.llm_model.process(LLMBaseInput(messages=message))
 
-        sources = [
-            {'title': result.title, 'url': result.url} for result in search_results
-        ]
+        # Convert search results to list of strings (URLs) as expected by WebSearchingOutput
+        sources = [result.url for result in search_results]
 
         return WebSearchingOutput(
             answer=llm_response.response,
