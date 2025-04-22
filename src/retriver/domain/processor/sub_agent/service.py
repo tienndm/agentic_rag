@@ -11,7 +11,7 @@ from domain.processor.retrive import RetriveOutput
 from domain.processor.retrive import RetriveService
 from domain.processor.web_searching import WebSearchingInput
 from domain.processor.web_searching import WebSearchingOutput
-from domain.processor.web_searching import WebSearchingService
+from domain.processor.web_searching import WebSearchService
 from infra.llm import CompletionMessage
 from infra.llm import LLMBaseInput
 from infra.llm import LLMService
@@ -47,7 +47,7 @@ class SubAgentService(BaseService):
 
     settings: Settings
     llm_service: LLMService
-    web_search_service: WebSearchingService
+    web_search_service: WebSearchService
     retrive_service: RetriveService
     rerank_service: RerankService
 
@@ -118,7 +118,7 @@ class SubAgentService(BaseService):
         return await self.web_search_service.process(
             WebSearchingInput(
                 query=step,
-                fetch_content=True,
+                top_k=self.settings.retrive.top_k,
             ),
         )
 
@@ -154,15 +154,7 @@ class SubAgentService(BaseService):
 
         if tool == 'web_search':
             web_search_output = await self.handle_web_search(step=step)
-            for source in web_search_output.sources:
-                contexts.append(
-                    {
-                        'title': source.get('title', ''),
-                        'url': source.get('url', ''),
-                        'content': source.get('content', ''),
-                        'source_type': 'web_search',
-                    },
-                )
+            contexts = web_search_output.contexts
 
         elif tool == 'vector_db':
             vector_db_output = self.handle_retriver(step=step)

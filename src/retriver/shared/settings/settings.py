@@ -9,6 +9,7 @@ from .llm import LLMSettings
 from .milvus import MilvusSettings
 from .rerank import RerankSettings
 from .retrive import Retrive
+from .web_search import WebSearchSettings
 
 load_dotenv(find_dotenv('.env'), override=True)
 
@@ -19,6 +20,7 @@ class Settings(BaseSettings):
     retrive: Retrive
     rerank: RerankSettings
     milvus: MilvusSettings
+    web_search: WebSearchSettings
 
     class Config:
         env_nested_delimiter = '__'

@@ -5,6 +5,7 @@ from .llm import LLMSettings
 from .milvus import MilvusSettings
 from .rerank import RerankSettings
 from .settings import Settings
+from .web_search import WebSearchSettings
 
 __all__ = [
     'Settings',
@@ -12,4 +13,5 @@ __all__ = [
     'MilvusSettings',
     'RerankSettings',
     'EmbedSettings',
+    'WebSearchSettings',
 ]
