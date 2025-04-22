@@ -31,7 +31,7 @@ async def retrive(inputs: RetriveInput) -> JSONResponse:
         )
 
     try:
-        response = application.process(
+        response = await application.process(
             inputs=ApplicationInput(
                 query=inputs.query,
             ),

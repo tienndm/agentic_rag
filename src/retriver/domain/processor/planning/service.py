@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from infra.llm import CompletionMessage
 from infra.llm import LLMBaseInput
 from infra.llm import LLMBaseService
@@ -19,17 +17,38 @@ logger = get_logger(__name__)
 class PlanningInput(BaseModel):
     query: str
     fact: str
-    previous_plan: Optional[str] = None
-    previous_error: Optional[str] = None
 
 
 class PlanningOutput(BaseModel):
+    # plan: list[str]
     plan: str
     metadata: dict[str, str] | None = None
 
 
 class PlanningService(BaseService):
     llm_model: LLMBaseService
+
+    def parse_plan(self, output: str) -> list[str]:
+        """
+        Parse the planning output into a list of individual steps.
+
+        Args:
+            output (str): The raw output from the planning prompt
+
+        Returns:
+            List[str]: List of extracted step contents
+        """
+        output = output.strip()
+
+        steps = []
+        step_markers = [marker for marker in output.split('[step') if marker.strip()]
+        for marker in step_markers:
+            parts = marker.split(']', 1)
+            if len(parts) > 1:
+                step_content = parts[1].strip()
+                steps.append(step_content)
+
+        return steps
 
     async def process(self, inputs: PlanningInput) -> PlanningOutput | None:
         try:
@@ -59,6 +78,7 @@ class PlanningService(BaseService):
                     messages=messages,
                 ),
             )
+            # plan_steps = self.parse_plan(response.response)
             return PlanningOutput(
                 plan=response.response,
                 metadata=response.metadata,

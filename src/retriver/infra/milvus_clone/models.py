@@ -1,0 +1,43 @@
+from __future__ import annotations
+
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+
+from pydantic import BaseModel
+from pydantic import Field
+
+
+class MilvusCollection(BaseModel):
+    """Model representing a Milvus collection configuration"""
+
+    collection_name: str
+    dimension: int
+    metric_type: str = 'COSINE'
+    index_type: str = 'IVF_FLAT'
+    index_params: Dict[str, Any] = Field(default_factory=lambda: {'nlist': 1024})
+    search_params: Dict[str, Any] = Field(default_factory=lambda: {'nprobe': 16})
+
+
+class MilvusDocument(BaseModel):
+    """Model representing a document to be stored in Milvus"""
+
+    id: Optional[str] = None
+    vector: List[float]
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class MilvusSearchResult(BaseModel):
+    """Model representing a search result from Milvus"""
+
+    id: str
+    score: float
+    metadata: Dict[str, Any]
+
+
+class MilvusQueryResponse(BaseModel):
+    """Model representing a response from a Milvus query"""
+
+    results: List[MilvusSearchResult]
+    took_ms: float

@@ -15,4 +15,12 @@ manager_router.include_router(embed_router, tags=['Embed'])
 
 @manager_router.get('/healthz')
 async def healthz():
+    """Health check endpoint for service monitoring.
+
+    This endpoint can be used by load balancers, Kubernetes probes,
+    or monitoring tools to verify that the service is running.
+
+    Returns:
+        dict: Simple status message indicating service health
+    """
     return {'status': 'ok'}

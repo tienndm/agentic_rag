@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from infra.milvus import MilvusService
+from infra.milvus_clone import MilvusService
 from shared.base import BaseModel
 from shared.base import BaseService
 from shared.logging import get_logger
@@ -11,7 +11,7 @@ logger = get_logger(__name__)
 
 class RetriveInput(BaseModel):
     query: list[str]
-    collection_name = str
+    collection_name: str
     top_k: int
 
 

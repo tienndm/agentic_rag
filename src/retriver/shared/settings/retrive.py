@@ -5,3 +5,4 @@ from shared.base import BaseModel
 
 class Retrive(BaseModel):
     max_tries: int
+    top_k: int

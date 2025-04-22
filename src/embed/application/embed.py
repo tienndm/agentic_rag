@@ -15,13 +15,42 @@ logger = get_logger(__name__)
 
 
 class EmbedApplication(BaseService):
+    """Application layer for handling embedding requests.
+
+    This class serves as an intermediary between the API layer and the domain service layer,
+    transforming API inputs into service inputs and service outputs into API outputs.
+    It formats the embedding results into a structure compatible with common embedding APIs.
+
+    Attributes:
+        settings (Settings): Application configuration settings
+    """
+
     settings: Settings
 
     @cached_property
     def embed_service(self) -> EmbeddingService:
+        """Lazily initialized embedding service instance.
+
+        Returns:
+            EmbeddingService: Service for generating text embeddings
+        """
         return EmbeddingService(settings=self.settings.embed)
 
     def process(self, inputs: ApplicationInput) -> ApplicationOutput:
+        """Process embedding requests and format the results.
+
+        Transforms the input text strings into embeddings via the embedding service,
+        then formats the embeddings into a standardized API response format.
+
+        Args:
+            inputs (ApplicationInput): Application input containing query text strings
+
+        Returns:
+            ApplicationOutput: Formatted embedding results with metadata
+
+        Raises:
+            Exception: Re-raises any exceptions from the embedding process after logging
+        """
         try:
             service_output = self.embed_service.process(
                 EmbeddingServiceInput(
@@ -29,13 +58,11 @@ class EmbedApplication(BaseService):
                 ),
             )
 
-            # Format embeddings according to OpenAI standard
             formatted_data = [
                 {'object': 'embedding', 'embedding': embedding, 'index': idx}
                 for idx, embedding in enumerate(service_output.vector)
             ]
 
-            # Create output with OpenAI standard format
             return ApplicationOutput(
                 data=formatted_data,
                 model=self.settings.embed.model_name,

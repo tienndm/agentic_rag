@@ -18,7 +18,7 @@ logger = get_logger(__name__)
 
 
 class LLMInput(BaseModel):
-    message: Message | BatchMessage
+    messages: Message | BatchMessage
 
 
 class LLMOutput(BaseModel):
@@ -59,7 +59,7 @@ class LLMService(LLMBaseService):
 
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                self.settings.url,
+                str(self.settings.url),
                 headers=self.header,
                 json=body,
                 timeout=None,
@@ -77,7 +77,7 @@ class LLMService(LLMBaseService):
 
     async def process(self, input: LLMInput) -> LLMOutput:
         response = await self.inference(
-            message=input.message,
+            message=input.messages,
             frequency_penalty=self.settings.frequency_penalty,
             n=self.settings.n,
             model=self.settings.model,
