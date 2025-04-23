@@ -166,8 +166,9 @@ class SubAgentService(BaseService):
 
         elif tool == 'vector_db':
             vector_db_output = await self.handle_retriver(step=step)
-            for context in vector_db_output.context:
-                contexts.append({'content': context})
+            contexts = vector_db_output.contexts
+            # for context in vector_db_output.context:
+            #     contexts.append({'content': context})
 
         else:
             logger.error(f'Unsupported tool selected: {tool}')
@@ -235,7 +236,7 @@ class SubAgentService(BaseService):
         self.completion_tokens = 0
         self.total_tokens = 0
 
-        max_retries = 2  # Maximum number of retry attempts
+        max_retries = 2
         retry_count = 0
         current_step = inputs.step
         validation_history = []

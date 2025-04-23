@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import Any
 from typing import Dict
 from typing import List
-from typing import Optional
 
 from sentence_transformers import CrossEncoder
 from shared.base import BaseModel
@@ -26,59 +25,10 @@ class RerankOutput(BaseModel):
 
 class RerankService(BaseService):
     settings: RerankSettings
-    _model: Optional[CrossEncoder] = None
-    _instance = None
-    _initialized = False
-
-    def __new__(cls, *args, **kwargs):
-        """Singleton pattern implementation"""
-        if cls._instance is None:
-            logger.info('Creating singleton instance of RerankService')
-            cls._instance = super().__new__(cls)
-        return cls._instance
-
-    def __init__(self, settings=None):
-        """Initialize only once when the instance is first created"""
-        if not self.__class__._initialized:
-            super().__init__()
-            if settings is not None:
-                self.settings = settings
-                self._initialize_model()
-            self.__class__._initialized = True
-            logger.info('RerankService initialized')
-
-    def _initialize_model(self) -> None:
-        """Initialize and warm up the model during service creation"""
-        if not hasattr(self, 'settings') or self.settings is None:
-            logger.warning('Cannot initialize model: settings not provided')
-            return
-
-        logger.info(f'Loading reranking model: {self.settings.model_name}')
-        self._model = CrossEncoder(self.settings.model_name)
-        self._warm_up_model()
-
-    def _warm_up_model(self) -> None:
-        """Warm up the model with a dummy query to ensure faster first inference"""
-        if self._model is None:
-            logger.warning('Cannot warm up model: model not initialized')
-            return
-
-        try:
-            dummy_query = 'This is a warm up query'
-            dummy_context = 'This is a warm up context'
-            self._model.predict([[dummy_query, dummy_context]])
-            logger.debug('Model warm-up completed successfully')
-        except Exception as e:
-            logger.warning(f'Model warm-up failed: {e}')
 
     @property
     def model(self) -> CrossEncoder:
-        """Ensure model is initialized before access"""
-        if self._model is None:
-            self._initialize_model()
-            if self._model is None:
-                raise ValueError('Failed to initialize the reranking model')
-        return self._model
+        return CrossEncoder(self.settings.model_name)
 
     async def process(self, inputs: RerankInput) -> RerankOutput:
         """
@@ -98,10 +48,6 @@ class RerankService(BaseService):
                     all_hits_with_index.append((hit_idx, chunk))
 
             hits_pairs = [[inputs.query, chunk] for _, chunk in all_hits_with_index]
-
-            if not hits_pairs:
-                logger.warning('No chunks found in hits, skipping reranking')
-                return RerankOutput(ranked_contexts=inputs.hits)
 
             scores = self.model.predict(hits_pairs)
 

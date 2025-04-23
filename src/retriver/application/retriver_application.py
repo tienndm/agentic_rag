@@ -47,14 +47,7 @@ class RetriveApplication(AsyncBaseService):
     def rerank_service(self) -> RerankService:
         """Get or create the RerankService singleton instance."""
         if self._rerank_service is None:
-            logger.debug('Getting RerankService singleton instance')
-            self._rerank_service = RerankService()
-            if (
-                not hasattr(self._rerank_service, 'settings')
-                or self._rerank_service.settings is None
-            ):
-                logger.debug('Setting RerankService settings')
-                self._rerank_service.settings = self.settings.rerank
+            self._rerank_service = RerankService(settings=self.settings.rerank)
         return self._rerank_service
 
     @property
