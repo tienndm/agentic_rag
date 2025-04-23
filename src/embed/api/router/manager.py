@@ -6,7 +6,7 @@ from shared.utils import get_settings
 
 from .v1.embedding import embed_router
 
-manager_router = APIRouter(prefix='/v1')
+manager_router = APIRouter(prefix='/api/v1')
 logger = get_logger(__name__)
 settings = get_settings()
 

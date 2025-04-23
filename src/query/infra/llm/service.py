@@ -57,8 +57,6 @@ class LLMService(LLMBaseService):
             'temperature': temperature,
         }
 
-        logger.info(f'URL enpoint: {self.settings.url}')
-
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 str(self.settings.url),

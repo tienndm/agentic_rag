@@ -50,7 +50,6 @@ class LoggingMiddleware:
             return
 
         structlog.contextvars.clear_contextvars()
-        # These context vars will be added to all log entries emitted during the request
         request_id = correlation_id.get()
         structlog.contextvars.bind_contextvars(request_id=request_id)
 
@@ -61,7 +60,7 @@ class LoggingMiddleware:
         if 'client' in scope:
             client_host = scope['client'][0]
             client_port = scope['client'][1]
-        url = get_path_with_query_string(scope)  # type: ignore
+        url = get_path_with_query_string(scope)
         http_method = scope['method']
         http_version = scope['http_version']
         body = b''

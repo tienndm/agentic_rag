@@ -38,6 +38,6 @@ class RetriverServiceV1(BaseRetriveService):
             )
 
         return BaseRetriveOutput(
-            answer=response.json()['answer'],
-            metadata=response.json()['metadata'],
+            answer=response.json()['info']['answer'],
+            metadata=response.json()['info']['metadata'],
         )

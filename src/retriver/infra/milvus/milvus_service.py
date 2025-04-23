@@ -5,7 +5,7 @@ from typing import Any
 import numpy as np
 from infra.embed import EmbedInput
 from infra.embed import EmbedService
-from shared.base import BaseService
+from shared.base import AsyncBaseService
 from shared.settings import MilvusSettings
 
 from .milvus_driver import MilvusDriver
@@ -13,7 +13,7 @@ from .models import MilvusInput
 from .models import MilvusOutput
 
 
-class MilvusService(BaseService):
+class MilvusService(AsyncBaseService):
     settings: MilvusSettings
     embed_service: EmbedService
 
@@ -37,14 +37,13 @@ class MilvusService(BaseService):
         )
         return result[0]
 
-    def process(self, inputs: MilvusInput) -> MilvusOutput:
-        vector = self.embed_service.process(
+    async def process(self, inputs: MilvusInput) -> MilvusOutput:
+        embed_result = await self.embed_service.process(
             EmbedInput(
                 query=inputs.query,
             ),
-        )[
-            0
-        ]['embedding']
+        )
+        vector = embed_result.embeddings[0]
 
         retrive_output = self.execute_query(
             vector=vector,

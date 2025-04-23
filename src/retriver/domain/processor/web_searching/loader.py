@@ -34,14 +34,19 @@ class LoaderService(BaseService):
         """
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=self.settings.headless)
-            page = await browser.new_page()
+            user_agent = getattr(
+                self.settings,
+                'user_agent',
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36',
+            )
+            page = await browser.new_page(user_agent=user_agent)
             try:
-                logger.debug(f'#web_searcher - fetch - url: {url}')
                 await page.goto(url, timeout=self.settings.timeout)
                 content = await page.content()
                 return content
             except Exception as e:
-                return e
+                logger.exception(f'Error crawling web: {e}')
+                return f'Error fetching {url}: {str(e)}'
             finally:
                 await browser.close()
 
@@ -56,4 +61,5 @@ class LoaderService(BaseService):
             list: List of HTML contents for each URL.
         """
         tasks = [self.fetch(url) for url in inputs.urls]
-        return await asyncio.gather(*tasks)
+        html = await asyncio.gather(*tasks)
+        return LoaderOutput(contents=html)

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from infra.llm import CompletionMessage
+from infra.llm import LLMBaseInput
 from infra.llm import LLMBaseService
 from infra.llm import MessageRole
 from shared.base import BaseModel
@@ -53,7 +54,9 @@ class AnswerGenerator(BaseService):
 
         try:
             response = await self.llm_model.process(
-                messages=message,
+                LLMBaseInput(
+                    messages=message,
+                ),
             )
 
             return AnswerGeneratorOutput(

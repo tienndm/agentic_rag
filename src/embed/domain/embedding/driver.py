@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import time
-
 from sentence_transformers import SentenceTransformer
 from shared.base.meta import SingletonMeta
 from shared.logging import get_logger
@@ -55,9 +53,6 @@ class EmbeddingDriver(metaclass=SingletonMeta):
         Args:
             num_samples (int, optional): Number of warm-up samples to run. Defaults to 3.
         """
-        logger.info(f'Warming up embedding model with {num_samples} sample runs...')
-        start_time = time.time()
-
         sample_sentences = [
             'This is a sample sentence for model warm-up.',
             'Warming up the model improves initial inference speed.',
@@ -65,9 +60,6 @@ class EmbeddingDriver(metaclass=SingletonMeta):
         ][:num_samples]
 
         _ = self.encode(sample_sentences)
-
-        elapsed_time = time.time() - start_time
-        logger.info(f'Model warm-up completed in {elapsed_time:.2f} seconds')
 
     def encode(self, sentences: list[str]) -> list:
         """Encode sentences to embeddings using the model.

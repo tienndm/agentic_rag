@@ -47,7 +47,6 @@ class QuerierService(BaseService):
         route = router_response.route.split(':')[1].lower().strip()
         logger.info(f'Route: {route}')
         if route == 'retriever_service':
-            logger.info('Enter retriver')
             retrive_response = await self.retrive_service.process(
                 BaseRetriveInput(query=inputs.query),
             )
@@ -55,7 +54,6 @@ class QuerierService(BaseService):
                 answer=retrive_response.answer,
                 metadata=retrive_response.metadata,
             )
-        logger.info('Not enter retriver')
         return ApplicationOutput(
             answer='',
             metadata={},

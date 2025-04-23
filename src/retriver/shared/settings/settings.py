@@ -4,6 +4,7 @@ from dotenv import find_dotenv
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
 
+from .chunking import ChunkingSettings
 from .embed import EmbedSettings
 from .llm import LLMSettings
 from .milvus import MilvusSettings
@@ -21,6 +22,7 @@ class Settings(BaseSettings):
     rerank: RerankSettings
     milvus: MilvusSettings
     web_search: WebSearchSettings
+    chunking: ChunkingSettings
 
     class Config:
         env_nested_delimiter = '__'

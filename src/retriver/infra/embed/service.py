@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import httpx
 import numpy as np
+from shared.base import AsyncBaseService
 from shared.base import BaseModel
-from shared.base import BaseService
 from shared.settings import EmbedSettings
 
 
@@ -12,10 +12,10 @@ class EmbedInput(BaseModel):
 
 
 class EmbedOutput(BaseModel):
-    embeddings: list[dict[str, np.ndarray]]
+    embeddings: list[np.ndarray]
 
 
-class EmbedService(BaseService):
+class EmbedService(AsyncBaseService):
     settings: EmbedSettings
 
     @property
@@ -38,6 +38,7 @@ class EmbedService(BaseService):
                 timeout=None,
             )
 
-        return EmbedOutput(
-            embeddings=response.json()['info']['data'],
-        )
+        data = response.json()['info']['data']
+        embeddings = [np.array(item['embedding']) for item in data]
+
+        return EmbedOutput(embeddings=embeddings)

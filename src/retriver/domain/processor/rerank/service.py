@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 from typing import Dict
 from typing import List
+from typing import Optional
 
 from sentence_transformers import CrossEncoder
 from shared.base import BaseModel
@@ -16,23 +17,70 @@ logger = get_logger(__name__)
 
 class RerankInput(BaseModel):
     query: str
-    contexts: List[Dict[str, Any]]
-    top_k: int = 3
+    hits: List[Dict[str, Any]]
 
 
 class RerankOutput(BaseModel):
     ranked_contexts: List[Dict[str, Any]]
-    metadata: Dict[str, Any] = {}
 
 
 class RerankService(BaseService):
     settings: RerankSettings
+    _model: Optional[CrossEncoder] = None
+    _instance = None
+    _initialized = False
+
+    def __new__(cls, *args, **kwargs):
+        """Singleton pattern implementation"""
+        if cls._instance is None:
+            logger.info('Creating singleton instance of RerankService')
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def __init__(self, settings=None):
+        """Initialize only once when the instance is first created"""
+        if not self.__class__._initialized:
+            super().__init__()
+            if settings is not None:
+                self.settings = settings
+                self._initialize_model()
+            self.__class__._initialized = True
+            logger.info('RerankService initialized')
+
+    def _initialize_model(self) -> None:
+        """Initialize and warm up the model during service creation"""
+        if not hasattr(self, 'settings') or self.settings is None:
+            logger.warning('Cannot initialize model: settings not provided')
+            return
+
+        logger.info(f'Loading reranking model: {self.settings.model_name}')
+        self._model = CrossEncoder(self.settings.model_name)
+        self._warm_up_model()
+
+    def _warm_up_model(self) -> None:
+        """Warm up the model with a dummy query to ensure faster first inference"""
+        if self._model is None:
+            logger.warning('Cannot warm up model: model not initialized')
+            return
+
+        try:
+            dummy_query = 'This is a warm up query'
+            dummy_context = 'This is a warm up context'
+            self._model.predict([[dummy_query, dummy_context]])
+            logger.debug('Model warm-up completed successfully')
+        except Exception as e:
+            logger.warning(f'Model warm-up failed: {e}')
 
     @property
     def model(self) -> CrossEncoder:
-        return CrossEncoder(self.settings.rerank.model_name)
+        """Ensure model is initialized before access"""
+        if self._model is None:
+            self._initialize_model()
+            if self._model is None:
+                raise ValueError('Failed to initialize the reranking model')
+        return self._model
 
-    async def process(self, input: RerankInput) -> RerankOutput:
+    async def process(self, inputs: RerankInput) -> RerankOutput:
         """
         Rerank the retrieved contexts based on relevance to the query using a Cross-Encoder model.
 
@@ -43,69 +91,52 @@ class RerankService(BaseService):
             RerankOutput object with ranked contexts
         """
         try:
-            logger.info(
-                f'Reranking {len(input.contexts)} contexts for query: {input.query}',
-            )
+            all_hits_with_index = []
+            for hit_idx, hit in enumerate(inputs.hits):
+                chunks = hit['chunks'] if isinstance(hit, dict) else hit.chunks
+                for chunk in chunks:
+                    all_hits_with_index.append((hit_idx, chunk))
 
-            # Use Cross-Encoder for reranking
-            ranked_contexts = await self._rerank_contexts(input.query, input.contexts)
+            hits_pairs = [[inputs.query, chunk] for _, chunk in all_hits_with_index]
 
-            # Return top_k results
-            top_results = ranked_contexts[: input.top_k]
+            if not hits_pairs:
+                logger.warning('No chunks found in hits, skipping reranking')
+                return RerankOutput(ranked_contexts=inputs.hits)
 
-            return RerankOutput(
-                ranked_contexts=top_results,
-                metadata={
-                    'total_contexts': len(input.contexts),
-                    'returned_contexts': len(top_results),
-                    'model_name': self.model_name,
-                    'model_type': 'cross-encoder',
-                },
-            )
+            scores = self.model.predict(hits_pairs)
+
+            hit_scores = {}
+            hit_counts = {}
+
+            for i, (hit_idx, _) in enumerate(all_hits_with_index):
+                hit_scores[hit_idx] = hit_scores.get(hit_idx, 0) + float(scores[i])
+                hit_counts[hit_idx] = hit_counts.get(hit_idx, 0) + 1
+
+            for i, hit in enumerate(inputs.hits):
+                if isinstance(hit, dict):
+                    if i in hit_scores:
+                        hit['reranking_score'] = hit_scores[i] / hit_counts[i]
+                    else:
+                        hit['reranking_score'] = 0.0
+                else:
+                    if i in hit_scores:
+                        hit.reranking_score = hit_scores[i] / hit_counts[i]
+                    else:
+                        hit.reranking_score = 0.0
+
+            def get_score(item):
+                return (
+                    item['reranking_score']
+                    if isinstance(item, dict)
+                    else item.reranking_score
+                )
+
+            ranked_hits = sorted(inputs.hits, key=get_score, reverse=True)
+
+            return RerankOutput(ranked_contexts=ranked_hits)
 
         except Exception as e:
             logger.exception(
                 f'Error while reranking contexts: {e}',
-                extra={
-                    'query': input.query,
-                    'num_contexts': len(input.contexts),
-                },
             )
-            raise e
-
-    async def _rerank_contexts(
-        self,
-        query: str,
-        contexts: List[Dict[str, Any]],
-    ) -> List[Dict[str, Any]]:
-        """
-        Rerank contexts using Cross-Encoder model which directly predicts the relevance
-        between query and context pairs.
-
-        Args:
-            query: The user query
-            contexts: List of context items with content and metadata
-
-        Returns:
-            Reranked list of contexts
-        """
-        if not contexts:
-            return []
-
-        text_pairs = []
-        for ctx in contexts:
-            content = ctx.get('full_content', ctx.get('content', ''))
-            content = content[:5000] if len(content) > 5000 else content
-            text_pairs.append([query, content])
-
-        scores = self.model.predict(text_pairs)
-
-        scored_pairs = [(float(scores[i]), i) for i in range(len(contexts))]
-        scored_pairs.sort(key=lambda x: x[0], reverse=True)
-
-        ranked_contexts = []
-        for score, idx in scored_pairs:
-            context_with_score = {**contexts[idx], 'relevance_score': score}
-            ranked_contexts.append(context_with_score)
-
-        return ranked_contexts
+            return RerankOutput(ranked_contexts=inputs.hits)

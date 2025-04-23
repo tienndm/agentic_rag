@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from .chunking import ChunkingSettings
 from .embed import EmbedSettings
 from .llm import LLMSettings
 from .milvus import MilvusSettings

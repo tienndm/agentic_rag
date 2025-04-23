@@ -7,9 +7,6 @@ from pydantic_settings import BaseSettings
 from .llm import LLMSettings
 from .retrive_service import RetriveServiceSettings
 
-# from .solving_service import SolvingServiceSettings
-
-# Load environment variables from .env file
 load_dotenv(find_dotenv('.env'), override=True)
 
 

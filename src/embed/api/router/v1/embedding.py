@@ -14,8 +14,6 @@ embed_router = APIRouter()
 logger = get_logger(__name__)
 settings = get_settings()
 
-logger.info(settings)
-
 
 @embed_router.post('/embed', tags=['embed'])
 async def embedding(inputs: EmbedInput) -> JSONResponse:

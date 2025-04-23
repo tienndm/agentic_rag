@@ -5,7 +5,10 @@ import re
 from bs4 import BeautifulSoup
 from shared.base import BaseModel
 from shared.base import BaseService
+from shared.logging import get_logger
 from shared.settings import WebSearchSettings
+
+logger = get_logger(__name__)
 
 
 class CleanerInput(BaseModel):
@@ -37,12 +40,16 @@ class CleanerService(BaseService):
         Extract and clean text from provided HTML content.
 
         Args:
-            html (str): HTML content to process.
+            inputs (CleanerInput): HTML content to process.
 
         Returns:
-            str: Extracted and cleaned text.
+            CleanerOutput: Extracted and cleaned text.
         """
         try:
+            if inputs.html.startswith('Error fetching'):
+                logger.warning(f'Received error as HTML: {inputs.html}')
+                return CleanerOutput(cleaned_text=f'[Failed to fetch content: {inputs.html}]')
+
             soup = BeautifulSoup(inputs.html, 'html.parser')
             for tag in self.settings.exclude_tags:
                 for elem in soup.find_all(tag):
@@ -59,6 +66,7 @@ class CleanerService(BaseService):
                     if cleanedText:
                         extractedText.append(cleanedText)
 
-            return '\n'.join(extractedText)
+            return CleanerOutput(cleaned_text='\n'.join(extractedText))
         except Exception as e:
-            raise e
+            logger.error(f'Error cleaning HTML: {str(e)}')
+            return CleanerOutput(cleaned_text=f'[Failed to clean content: {str(e)}]')

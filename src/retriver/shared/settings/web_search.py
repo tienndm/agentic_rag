@@ -9,6 +9,6 @@ class WebSearchSettings(BaseModel):
     headless: bool
     timeout: int
 
-    target_tags: list
-    exclude_tags: list
-    exclude_classes: list
+    target_tags: list[str]
+    exclude_tags: list[str]
+    exclude_classes: list[str]
