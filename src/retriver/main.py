@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from api.helpers import LoggingMiddleware
 from api.routers import retrive_router
-from domain.processor.rerank import RerankService
+from domain.processor.rerank import RerankDriver
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from shared.logging import get_logger
@@ -26,10 +26,8 @@ async def lifespan(app: FastAPI):
     Args:
         app (FastAPI): The FastAPI application instance
     """
-    logger.info('Initializing RerankService singleton during application startup')
     settings = get_settings()
-    RerankService(settings=settings.rerank)
-    logger.info('RerankService initialized and model warmed up')
+    RerankDriver(settings=settings.rerank)
 
     yield
 
@@ -54,6 +52,11 @@ app.include_router(retrive_router, prefix='/api/v1', tags=['retrive'])
 
 @app.get('/')
 async def index():
+    """Root endpoint that redirects to the API documentation.
+
+    Returns:
+        RedirectResponse: A redirect to the Swagger UI documentation
+    """
     return RedirectResponse(url='/docs')
 
 

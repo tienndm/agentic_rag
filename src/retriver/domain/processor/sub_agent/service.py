@@ -1,51 +1,62 @@
 from __future__ import annotations
 
-import json
-from typing import Any
 from typing import Dict
-from typing import List
 
-from domain.processor.rerank import RerankInput
 from domain.processor.rerank import RerankService
-from domain.processor.retrive import RetriveOutput
 from domain.processor.retrive import RetriveService
-from domain.processor.web_searching import WebSearchingInput
-from domain.processor.web_searching import WebSearchingOutput
 from domain.processor.web_searching import WebSearchService
-from infra.llm import CompletionMessage
-from infra.llm import LLMBaseInput
 from infra.llm import LLMService
-from infra.llm import MessageRole
 from shared.base import BaseModel
 from shared.base import BaseService
 from shared.logging import get_logger
 from shared.settings import Settings
 
-from .prompt.clean_context import CLEAN_CONTEXT_SYSTEM_PROMPT
-from .prompt.clean_context import CLEAN_CONTEXT_USER_PROMPT
-from .prompt.decide_tool import DECIDE_TOOL_SYSTEM_PROMPT
-from .prompt.decide_tool import DECIDE_TOOL_USER_PROMPT
-from .prompt.validate_output import VALIDATE_OUTPUT_SYSTEM_PROMPT
-from .prompt.validate_output import VALIDATE_OUTPUT_USER_PROMPT
+from .context_cleaner import ContextCleanerHandler
+from .output_validator import OutputValidatorHandler
+from .tool_decision import ToolDecisionHandler
+from .tool_handler import ToolOperationHandler
 
 logger = get_logger(__name__)
 
 
 class SubAgentInput(BaseModel):
-    """Input model for the SubAgent service."""
+    """
+    Input model for the SubAgent service.
+
+    Attributes:
+        step: A specific information retrieval step or query to be processed
+    """
 
     step: str
 
 
 class SubAgentOutput(BaseModel):
-    """Output model for the SubAgent service."""
+    """
+    Output model for the SubAgent service.
+
+    Attributes:
+        info: The processed and consolidated information retrieved
+        metadata: Optional processing metadata including token counts and validation history
+    """
 
     info: str
     metadata: Dict[str, str] | None = None
 
 
 class SubAgentService(BaseService):
-    """Service for handling sub-agent operations, including tool selection and context retrieval."""
+    """
+    Service for handling contextual information retrieval using dynamic tool selection.
+
+    SubAgentService functions as an intelligent router that:
+    1. Analyzes the information need specified in a query
+    2. Selects the optimal retrieval mechanism (web search or vector DB)
+    3. Cleans and processes retrieved contexts
+    4. Validates information quality and sufficiency
+    5. Reformulates queries when needed to fill information gaps
+
+    The service implements a self-improving feedback loop where insufficient results
+    trigger query reformulation and additional retrieval attempts.
+    """
 
     settings: Settings
     llm_service: LLMService
@@ -53,184 +64,49 @@ class SubAgentService(BaseService):
     retrive_service: RetriveService
     rerank_service: RerankService
 
-    prompt_tokens: int = 0
-    completion_tokens: int = 0
-    total_tokens: int = 0
+    @property
+    def tool_decision_handler(self) -> ToolDecisionHandler:
+        return ToolDecisionHandler(self.llm_service)
 
-    async def decide_tool(self, step: str) -> str:
-        """Determine which tool to use for processing a given step.
+    @property
+    def context_cleaner_handler(self) -> ContextCleanerHandler:
+        return ContextCleanerHandler(self.llm_service)
 
-        Args:
-            step: The processing step/query
+    @property
+    def output_validator_handler(self) -> OutputValidatorHandler:
+        return OutputValidatorHandler(self.llm_service)
 
-        Returns:
-            The selected tool name
-        """
-        messages = [
-            CompletionMessage(
-                role=MessageRole.SYSTEM,
-                content=DECIDE_TOOL_SYSTEM_PROMPT,
-            ),
-            CompletionMessage(
-                role=MessageRole.USER,
-                content=DECIDE_TOOL_USER_PROMPT.format(query=step),
-            ),
-        ]
-
-        response = await self.llm_service.process(
-            LLMBaseInput(messages=messages),
-        )
-        tool = response.response.strip().lower()
-        logger.info(f'Decided to use tool: {tool} for step: {step}')
-        self.prompt_tokens += int(response.metadata['prompt_tokens'])
-        self.completion_tokens += int(response.metadata['completion_tokens'])
-        self.total_tokens += int(response.metadata['total_tokens'])
-        return tool
-
-    async def clean_context(self, step: str, context: str) -> str:
-        messages = [
-            CompletionMessage(
-                role=MessageRole.SYSTEM,
-                content=CLEAN_CONTEXT_SYSTEM_PROMPT,
-            ),
-            CompletionMessage(
-                role=MessageRole.USER,
-                content=CLEAN_CONTEXT_USER_PROMPT.format(query=step, context=context),
-            ),
-        ]
-        response = await self.llm_service.process(
-            LLMBaseInput(messages=messages),
-        )
-        context = response.response.strip()
-        logger.info(f'Context cleaned: {context}')
-        self.prompt_tokens += int(response.metadata['prompt_tokens'])
-        self.completion_tokens += int(response.metadata['completion_tokens'])
-        self.total_tokens += int(response.metadata['total_tokens'])
-        return context
-
-    async def handle_web_search(self, step: str) -> WebSearchingOutput:
-        """Handle web search for a given step.
-
-        Args:
-            step: The search query
-
-        Returns:
-            WebSearchingOutput with search results
-        """
-        return await self.web_search_service.process(
-            WebSearchingInput(
-                query=step,
-                top_k=self.settings.retrive.top_k,
-            ),
+    @property
+    def tool_operation_handler(self) -> ToolOperationHandler:
+        return ToolOperationHandler(
+            self.settings,
+            self.web_search_service,
+            self.retrive_service,
+            self.rerank_service,
         )
 
-    async def handle_retriver(self, step: str) -> RetriveOutput:
-        """Handle vector database query for a given step.
-
-        Args:
-            step: The search query
-
-        Returns:
-            RetriveOutput with search results
-        """
-        # return await self.retrive_service.process(
-        #     RetriveInput(
-        #         query=step,
-        #     ),
-        # )
-        return await self.web_search_service.process(
-            WebSearchingInput(
-                query=step,
-                top_k=self.settings.retrive.top_k,
-            ),
-        )
-
-    async def handle_tool(self, tool: str, step: str) -> List[Dict[str, Any]]:
-        """Process a step using the selected tool.
-
-        Args:
-            tool: The tool to use ("web_search" or "vector_db")
-            step: The processing step/query
-
-        Returns:
-            List of context dictionaries
-
-        Raises:
-            ValueError: If an unsupported tool is specified
-        """
-        contexts = []
-
-        if tool == 'web_search':
-            web_search_output = await self.handle_web_search(step=step)
-            contexts = web_search_output.contexts
-
-        elif tool == 'vector_db':
-            vector_db_output = await self.handle_retriver(step=step)
-            contexts = vector_db_output.contexts
-            # for context in vector_db_output.context:
-            #     contexts.append({'content': context})
-
-        else:
-            logger.error(f'Unsupported tool selected: {tool}')
-            raise ValueError(f'Unsupported tool: {tool}')
-
-        return contexts
-
-    async def validate_output(self, step: str, info: str) -> Dict[str, Any]:
-        """Validate the quality of the retrieved information against the query.
-
-        Args:
-            step: The original query/step
-            info: The retrieved information
-
-        Returns:
-            Dictionary with validation results, including if information is sufficient
-            and a reformulated query if needed
-        """
-        messages = [
-            CompletionMessage(
-                role=MessageRole.SYSTEM,
-                content=VALIDATE_OUTPUT_SYSTEM_PROMPT,
-            ),
-            CompletionMessage(
-                role=MessageRole.USER,
-                content=VALIDATE_OUTPUT_USER_PROMPT.format(step=step, info=info),
-            ),
-        ]
-
-        response = await self.llm_service.process(
-            LLMBaseInput(messages=messages),
-        )
-
-        self.prompt_tokens += int(response.metadata['prompt_tokens'])
-        self.completion_tokens += int(response.metadata['completion_tokens'])
-        self.total_tokens += int(response.metadata['total_tokens'])
-
-        validation_result_str = response.response.strip()
-
-        try:
-            validation_result = json.loads(validation_result_str)
-            logger.info(f'Validation result: {validation_result}')
-            return validation_result
-        except json.JSONDecodeError:
-            logger.warning(
-                f'Failed to parse validation result as JSON: {validation_result_str}',
-            )
-            return {
-                'is_sufficient': True,
-                'reasoning': 'Failed to parse validation result',
-                'reformulated_query': step,
-            }
+    prompt_tokens = 0
+    completion_tokens = 0
+    total_tokens = 0
 
     async def process(self, inputs: SubAgentInput) -> SubAgentOutput:
-        """Process a step using the appropriate tool and generate a consolidated response.
-        If the initial results are inadequate, retry with a reformulated query.
+        """
+        Process a step using the appropriate tool and generate a consolidated response.
+
+        Implements an adaptive information retrieval workflow that:
+        1. Selects the optimal tool for the information need
+        2. Retrieves and processes information
+        3. Validates information quality
+        4. Reformulates queries and retries if needed
+
+        The process is self-correcting, aiming to maximize information quality
+        through iterative refinement when needed.
 
         Args:
             inputs: The SubAgentInput containing the step to process
 
         Returns:
-            SubAgentOutput with consolidated information and metadata
+            SubAgentOutput: Consolidated information and processing metadata
         """
         self.prompt_tokens = 0
         self.completion_tokens = 0
@@ -244,53 +120,60 @@ class SubAgentService(BaseService):
 
         try:
             while retry_count <= max_retries:
-                contexts = []
+                # Decide which tool to use
+                tool = await self.tool_decision_handler.decide_tool(current_step)
+                self.prompt_tokens += self.tool_decision_handler.prompt_tokens
+                self.completion_tokens += self.tool_decision_handler.completion_tokens
+                self.total_tokens += self.tool_decision_handler.total_tokens
 
-                tool = await self.decide_tool(current_step)
-
-                contexts = await self.handle_tool(tool=tool, step=current_step)
-
-                context_dicts = []
-                for context in contexts:
-                    if isinstance(context, dict):
-                        context_dicts.append(context)
-                    else:
-                        context_dict = {
-                            'title': context.title,
-                            'url': context.url,
-                            'chunks': context.chunks,
-                        }
-                        context_dicts.append(context_dict)
+                # Handle tool operation and retrieve contexts
+                contexts = await self.tool_operation_handler.handle_tool(
+                    tool=tool, step=current_step,
+                )
 
                 # Rerank the contexts
-                rerank_output = await self.rerank_service.process(
-                    RerankInput(query=current_step, hits=context_dicts),
+                contexts = await self.tool_operation_handler.rerank_contexts(
+                    current_step, contexts,
                 )
-                contexts = rerank_output.ranked_contexts[: self.settings.retrive.top_k]
 
                 # Clean the context
-                cleaned_context = await self.clean_context(
+                cleaned_context = await self.context_cleaner_handler.clean_context(
                     step=current_step,
                     context=str(contexts),
                 )
+                self.prompt_tokens += self.context_cleaner_handler.prompt_tokens
+                self.completion_tokens += self.context_cleaner_handler.completion_tokens
+                self.total_tokens += self.context_cleaner_handler.total_tokens
 
                 # If this isn't the first attempt, combine with previous relevant contexts
                 if retry_count > 0 and all_contexts:
                     combined_contexts = f'Previously retrieved: {all_contexts}\n\nNew retrieval: {cleaned_context}'
-                    cleaned_context = await self.clean_context(
-                        step=inputs.step,  # Use original query for final cleaning
+                    cleaned_context = await self.context_cleaner_handler.clean_context(
+                        step=inputs.step,
                         context=combined_contexts,
                     )
+                    self.prompt_tokens += self.context_cleaner_handler.prompt_tokens
+                    self.completion_tokens += (
+                        self.context_cleaner_handler.completion_tokens
+                    )
+                    self.total_tokens += self.context_cleaner_handler.total_tokens
 
                 # Store retrieved context for possible future use
                 all_contexts = cleaned_context
 
                 # Validate the retrieved information
-                if retry_count < max_retries:  # Skip validation on the last attempt
-                    validation_result = await self.validate_output(
-                        step=inputs.step,  # Always validate against original query
-                        info=cleaned_context,
+                if retry_count < max_retries:
+                    validation_result = (
+                        await self.output_validator_handler.validate_output(
+                            step=inputs.step,
+                            info=cleaned_context,
+                        )
                     )
+                    self.prompt_tokens += self.output_validator_handler.prompt_tokens
+                    self.completion_tokens += (
+                        self.output_validator_handler.completion_tokens
+                    )
+                    self.total_tokens += self.output_validator_handler.total_tokens
 
                     validation_entry = {
                         'attempt': retry_count + 1,
@@ -309,7 +192,8 @@ class SubAgentService(BaseService):
 
                     # Otherwise, update the query and retry
                     reformulated_query = validation_result.get(
-                        'reformulated_query', current_step,
+                        'reformulated_query',
+                        current_step,
                     )
                     if reformulated_query == current_step:
                         # If the query wasn't reformulated, add specificity to avoid duplicate search

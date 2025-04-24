@@ -17,6 +17,24 @@ settings = get_settings()
 
 @retrive_router.post('/retrive', tags=['retrive'])
 async def retrive(inputs: RetriveInput) -> JSONResponse:
+    """
+    Main retrieval endpoint that processes user queries using the RAG pipeline.
+
+    This endpoint:
+    1. Takes a user query as input
+    2. Initializes the retrieval application with appropriate settings
+    3. Processes the query through the complete RAG pipeline
+    4. Returns the generated answer with appropriate status codes
+
+    Args:
+        inputs: RetriveInput object containing the user's query
+
+    Returns:
+        JSONResponse: Contains the generated answer and success/error messages
+
+    Raises:
+        Exception: Handled internally for application initialization or processing errors
+    """
     excepttion_handler = ExceptionHandler(
         logger=logger.bind(),
         service_name=__name__,
