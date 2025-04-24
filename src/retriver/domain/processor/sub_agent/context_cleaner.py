@@ -4,6 +4,7 @@ from infra.llm import CompletionMessage
 from infra.llm import LLMBaseInput
 from infra.llm import LLMService
 from infra.llm import MessageRole
+from shared.base import BaseService
 from shared.logging import get_logger
 
 from .prompt.clean_context import CLEAN_CONTEXT_SYSTEM_PROMPT
@@ -12,17 +13,18 @@ from .prompt.clean_context import CLEAN_CONTEXT_USER_PROMPT
 logger = get_logger(__name__)
 
 
-class ContextCleanerHandler:
+class ContextCleanerHandler(BaseService):
     """
     Handler for cleaning and refining retrieved context to improve relevance and readability.
     """
 
     llm_service: LLMService
-    prompt_tokens = 0
-    completion_tokens = 0
-    total_tokens = 0
 
-    async def clean_context(self, step: str, context: str) -> str:
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
+
+    async def process(self, step: str, context: str) -> str:
         """
         Clean and refine retrieved context to improve relevance and readability.
 

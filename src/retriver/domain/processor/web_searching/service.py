@@ -111,6 +111,8 @@ class WebSearchService(BaseService):
         try:
             html = await self.loader.process(LoaderInput(urls=urls))
             docs = []
+            captcha_detected = False
+
             for h in html.contents:
                 try:
                     if not isinstance(h, str):
@@ -118,11 +120,16 @@ class WebSearchService(BaseService):
 
                     cleaned_output = self.cleaner.process(CleanerInput(html=h))
 
+                    if cleaned_output.is_captcha:
+                        captcha_detected = True
+                        docs.append([cleaned_output.cleaned_text])
+                        continue
+
                     if (
                         not cleaned_output.cleaned_text
                         or cleaned_output.cleaned_text.isspace()
                     ):
-                        logger.warning(f'Empty cleaned text for URL: {h}')
+                        logger.warning('Empty cleaned text for URL')
                         docs.append([])
                         continue
 
@@ -142,6 +149,11 @@ class WebSearchService(BaseService):
                 except Exception as e:
                     logger.error(f'Error processing HTML: {str(e)}')
                     docs.append([])
+
+            # If captcha was detected, add warning to metadata
+            if captcha_detected:
+                logger.warning('Google captcha detected in one or more search results')
+
             return docs
         except Exception as e:
             logger.error(f'Error in fetch_pages: {str(e)}')
@@ -227,7 +239,7 @@ class WebSearchService(BaseService):
                         retry_delay *= 1.5  # Exponential backoff
 
             if not results:
-                logger.error('All DDGS search attempts failed')
+                logger.warning('All DDGS search attempts failed')
                 return WebSearchingOutput(
                     contexts=[],
                     metadata={

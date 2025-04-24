@@ -17,6 +17,7 @@ class CleanerInput(BaseModel):
 
 class CleanerOutput(BaseModel):
     cleaned_text: str
+    is_captcha: bool = False
 
 
 class CleanerService(BaseService):
@@ -35,6 +36,28 @@ class CleanerService(BaseService):
         text = re.sub(r'\s+', ' ', text.strip())
         return re.sub(r'[\r\n\t]+', ' ', text)
 
+    def detect_captcha(self, html: str) -> bool:
+        """
+        Detect if the HTML contains a Google captcha page.
+
+        Args:
+            html (str): HTML content to check
+
+        Returns:
+            bool: True if captcha page detected, False otherwise
+        """
+        captcha_patterns = [
+            'Our systems have detected unusual traffic',
+            'Please try your request again later',
+            'This page appears when Google automatically detects requests',
+            'Why did this happen?',
+            'Terms of Service',
+            'IP address:',
+        ]
+
+        pattern_matches = sum(1 for pattern in captcha_patterns if pattern in html)
+        return pattern_matches >= 3
+
     def process(self, inputs: CleanerInput) -> CleanerOutput:
         """
         Extract and clean text from provided HTML content.
@@ -48,7 +71,16 @@ class CleanerService(BaseService):
         try:
             if inputs.html.startswith('Error fetching'):
                 logger.warning(f'Received error as HTML: {inputs.html}')
-                return CleanerOutput(cleaned_text=f'[Failed to fetch content: {inputs.html}]')
+                return CleanerOutput(
+                    cleaned_text=f'[Failed to fetch content: {inputs.html}]',
+                )
+
+            if self.detect_captcha(inputs.html):
+                logger.warning('Google captcha page detected')
+                return CleanerOutput(
+                    cleaned_text='[Google captcha detected - unable to retrieve search results]',
+                    is_captcha=True,
+                )
 
             soup = BeautifulSoup(inputs.html, 'html.parser')
             for tag in self.settings.exclude_tags:

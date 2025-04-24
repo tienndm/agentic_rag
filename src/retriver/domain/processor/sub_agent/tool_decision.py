@@ -4,6 +4,7 @@ from infra.llm import CompletionMessage
 from infra.llm import LLMBaseInput
 from infra.llm import LLMService
 from infra.llm import MessageRole
+from shared.base import BaseService
 from shared.logging import get_logger
 
 from .prompt.decide_tool import DECIDE_TOOL_SYSTEM_PROMPT
@@ -12,17 +13,18 @@ from .prompt.decide_tool import DECIDE_TOOL_USER_PROMPT
 logger = get_logger(__name__)
 
 
-class ToolDecisionHandler:
+class ToolDecisionHandler(BaseService):
     """
     Handler for determining which retrieval tool is most appropriate for a given information need.
     """
 
     llm_service: LLMService
-    prompt_tokens = 0
-    completion_tokens = 0
-    total_tokens = 0
 
-    async def decide_tool(self, step: str) -> str:
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
+
+    async def process(self, step: str) -> str:
         """
         Determine which retrieval tool is most appropriate for a given information need.
 
