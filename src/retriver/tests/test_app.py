@@ -21,7 +21,7 @@ class TestApp(unittest.TestCase):
         result = loop.run_until_complete(
             retrive_service.process(
                 ApplicationInput(
-                    query='Cho tôi vài thông tin về mô hình BERT',
+                    query='So sánh tác động môi trường và hiệu quả năng lượng giữa xe điện và xe sử dụng nhiên liệu hóa thạch tại các quốc gia đang phát triển, có tính đến vòng đời sản phẩm, hạ tầng sạc, và nguồn điện sản xuất.',
                 ),
             ),
         )

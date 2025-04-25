@@ -14,7 +14,7 @@ from domain.processor.web_searching import WebSearchingOutput
 from domain.processor.web_searching import WebSearchService
 from shared.base import BaseService
 from shared.logging import get_logger
-from shared.settings import RetriveSettings
+from shared.settings import RetrieveSettings
 
 logger = get_logger(__name__)
 
@@ -24,7 +24,7 @@ class ToolOperationHandler(BaseService):
     Handler for performing operations using different retrieval tools.
     """
 
-    settings: RetriveSettings
+    settings: RetrieveSettings
 
     web_search_service: WebSearchService
     retrive_service: RetriveService
@@ -53,7 +53,6 @@ class ToolOperationHandler(BaseService):
         search_failed = False
         if not output.contexts:
             search_failed = True
-            logger.warning(f'Web search returned no results for: {step}')
         else:
             empty_or_error_count = 0
             for context in output.contexts:
@@ -64,9 +63,6 @@ class ToolOperationHandler(BaseService):
 
             if empty_or_error_count > len(output.contexts) * 0.5:
                 search_failed = True
-                logger.warning(
-                    f'Web search returned mostly empty or error results for: {step}',
-                )
 
         return output, search_failed
 
@@ -142,7 +138,6 @@ class ToolOperationHandler(BaseService):
             List[Dict[str, Any]]: List of reranked contexts limited by top_k setting
         """
         if not contexts:
-            logger.warning('No contexts to rerank, returning empty list')
             return []
 
         context_dicts = []
@@ -150,7 +145,6 @@ class ToolOperationHandler(BaseService):
             if isinstance(context, dict):
                 context_dicts.append(context)
             elif isinstance(context, str):
-                # Handle string contexts by wrapping them in a dict
                 context_dict = {
                     'content': context,
                     'title': '',
@@ -159,7 +153,6 @@ class ToolOperationHandler(BaseService):
                 }
                 context_dicts.append(context_dict)
             else:
-                # For object-like contexts with attributes
                 try:
                     context_dict = {
                         'title': getattr(context, 'title', ''),
@@ -169,7 +162,6 @@ class ToolOperationHandler(BaseService):
                     context_dicts.append(context_dict)
                 except Exception as e:
                     logger.warning(f'Failed to process context: {e}')
-                    # Create minimal context dict to avoid failing
                     if hasattr(context, '__str__'):
                         context_dict = {
                             'content': str(context),

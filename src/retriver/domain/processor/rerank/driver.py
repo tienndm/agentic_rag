@@ -20,7 +20,6 @@ class RerankDriver(metaclass=SingletonMeta):
     @property
     def rerank_model(self) -> CrossEncoder:
         if self._model is None:
-            logger.info('First load model')
             self._model = CrossEncoder(
                 model_name_or_path=self.settings.model_name,
             )

@@ -17,4 +17,24 @@ Chuyển đổi một câu mô tả hoặc mệnh lệnh thành một câu hỏi
 <output_format>
 Trả về một câu hỏi duy nhất phù hợp để tìm kiếm thông tin trên web.
 </output_format>
+
+<warning> Output chỉ khoảng 10 từ </warning>
+
+<example>
+    <input>
+        "Các phiên bản của mô hình BERT (BERT, BERT-large, BERT-base, BERT-small) có gì khác nhau?"
+    </input>
+    <output>
+        "So sánh các phiên bản của BERT."
+    </output>
+</example>
+
+<example>
+    <input>
+        "Định nghĩa và nguyên lý hoạt động của mô hình BERT là gì?"
+    </input>
+    <output>
+        "Giải thích nguyên lý hoạt động của BERT"
+    </output>
+</example>
 """

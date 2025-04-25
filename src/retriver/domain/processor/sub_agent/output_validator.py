@@ -65,18 +65,11 @@ class OutputValidatorHandler(BaseService):
         validation_result_str = response.response.strip()
 
         try:
-            # Handle potential Unicode characters (like Vietnamese text) by ensuring proper encoding
             validation_result = json.loads(validation_result_str)
             logger.info(f'Validation result: {validation_result}')
             return validation_result
-        except json.JSONDecodeError as e:
-            logger.warning(
-                f'Failed to parse validation result as JSON: {validation_result_str}. Error: {str(e)}',
-            )
-            # Try cleaning the JSON string to make it more parsable
+        except json.JSONDecodeError:
             try:
-                # Sometimes the LLM might add extra text before or after the JSON
-                # Try to find and extract just the JSON part
                 import re
 
                 json_pattern = r'(\{.*?\})'
@@ -85,13 +78,12 @@ class OutputValidatorHandler(BaseService):
                     cleaned_json = match.group(1)
                     validation_result = json.loads(cleaned_json)
                     logger.info(
-                        f'Parsed validation result after cleaning: {validation_result}',
+                        f'Validation result: {validation_result}',
                     )
                     return validation_result
             except Exception as e2:
                 logger.warning(f'Failed second attempt to parse JSON: {str(e2)}')
 
-            # If all parsing attempts fail, return a default response
             return {
                 'is_sufficient': True,
                 'reasoning': 'Failed to parse validation result',

@@ -9,7 +9,7 @@ from .embed import EmbedSettings
 from .llm import LLMSettings
 from .milvus import MilvusSettings
 from .rerank import RerankSettings
-from .retrive import RetriveSettings
+from .retrive import RetrieveSettings
 from .web_search import WebSearchSettings
 
 load_dotenv(find_dotenv('.env'), override=True)
@@ -18,7 +18,7 @@ load_dotenv(find_dotenv('.env'), override=True)
 class Settings(BaseSettings):
     llm: LLMSettings
     embed: EmbedSettings
-    retrive: RetriveSettings
+    retrive: RetrieveSettings
     rerank: RerankSettings
     milvus: MilvusSettings
     web_search: WebSearchSettings

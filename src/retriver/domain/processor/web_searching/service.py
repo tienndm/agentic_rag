@@ -129,7 +129,6 @@ class WebSearchService(BaseService):
                         not cleaned_output.cleaned_text
                         or cleaned_output.cleaned_text.isspace()
                     ):
-                        logger.warning('Empty cleaned text for URL')
                         docs.append([])
                         continue
 
@@ -138,7 +137,6 @@ class WebSearchService(BaseService):
                     )
 
                     if not chunking_out.chunks:
-                        logger.warning('No chunks generated for content')
                         docs.append([])
                     else:
                         docs.append(chunking_out.chunks)
@@ -150,7 +148,6 @@ class WebSearchService(BaseService):
                     logger.error(f'Error processing HTML: {str(e)}')
                     docs.append([])
 
-            # If captcha was detected, add warning to metadata
             if captcha_detected:
                 logger.warning('Google captcha detected in one or more search results')
 
@@ -221,25 +218,20 @@ class WebSearchService(BaseService):
                     )
 
                     if results:
-                        logger.info(f'DDGS search successful on attempt {attempt + 1}')
                         break
 
-                    logger.warning(
-                        f'DDGS search returned no results on attempt {attempt + 1}',
-                    )
                     if attempt < max_tries - 1:
                         time.sleep(retry_delay)
-                        retry_delay *= 1.5  # Exponential backoff
+                        retry_delay *= 1.5
                 except Exception as e:
                     logger.error(
                         f'DDGS search error on attempt {attempt + 1}: {str(e)}',
                     )
                     if attempt < max_tries - 1:
                         time.sleep(retry_delay)
-                        retry_delay *= 1.5  # Exponential backoff
+                        retry_delay *= 1.5
 
             if not results:
-                logger.warning('All DDGS search attempts failed')
                 return WebSearchingOutput(
                     contexts=[],
                     metadata={

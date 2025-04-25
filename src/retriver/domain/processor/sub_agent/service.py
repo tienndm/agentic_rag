@@ -93,17 +93,14 @@ class SubAgentService(BaseService):
             retrive_service: Service for retrieving information from vector database
             rerank_service: Service for reranking search results
         """
-        # Call BaseService.__init__ first with no arguments to avoid Pydantic validation issues
         super().__init__()
 
-        # Then set the attributes manually
         self.settings = settings
         self.llm_service = llm_service
         self.web_search_service = web_search_service
         self.retrive_service = retrive_service
         self.rerank_service = rerank_service
 
-        # Only initialize memory manager if llm_service is provided
         if llm_service is not None:
             self._memory_manager = MemoryManager(llm_service=self.llm_service)
 
@@ -177,9 +174,6 @@ class SubAgentService(BaseService):
             or self.rerank_service is None
             or self._memory_manager is None
         ):
-            logger.warning(
-                'SubAgentService called without required services initialized. Returning dummy response.',
-            )
             return SubAgentOutput(
                 info=f'This is a test response for query: {inputs.step}',
                 metadata={'note': 'Test mode - services not initialized'},
@@ -205,7 +199,9 @@ class SubAgentService(BaseService):
                 self.total_tokens += self.tool_decision_handler.total_tokens
 
                 get_cache_input = MemoryManagerInput(
-                    query_id=query_id, action='get_cache', step=current_step,
+                    query_id=query_id,
+                    action='get_cache',
+                    step=current_step,
                 )
                 cache_result = await self._memory_manager.process(get_cache_input)
                 cached_context = cache_result.result
@@ -231,9 +227,6 @@ class SubAgentService(BaseService):
 
                 if search_failed:
                     retry_count += 1
-                    logger.warning(
-                        f'Search failed (attempt {retry_count}/{max_retries})',
-                    )
 
                     if retry_count <= max_retries:
                         current_step = (
@@ -336,7 +329,8 @@ class SubAgentService(BaseService):
                         get_input = MemoryManagerInput(query_id=query_id, action='get')
                         memory_result = await self._memory_manager.process(get_input)
                         missing_aspects = memory_result.metadata.get(
-                            'missing_aspects', [],
+                            'missing_aspects',
+                            [],
                         )
 
                         if missing_aspects:

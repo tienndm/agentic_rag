@@ -76,7 +76,6 @@ class CleanerService(BaseService):
                 )
 
             if self.detect_captcha(inputs.html):
-                logger.warning('Google captcha page detected')
                 return CleanerOutput(
                     cleaned_text='[Google captcha detected - unable to retrieve search results]',
                     is_captcha=True,

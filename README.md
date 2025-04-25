@@ -19,7 +19,7 @@ Presented as part of a seminar on implementing Agentic RAG in production environ
 - **Multi-Agent System**: Routes queries to specialized agents based on query type
 - **Query Router**: Central dispatcher that determines which agent should handle a request
 - **RAG Agent**: Sophisticated retrieval and generation agent for knowledge-based queries
-- **Math Solving Agent**: Specialized agent for handling mathematical problems
+- **Math Solving Agent**: *(Planned)* Specialized agent for handling mathematical problems
 - **Agent-Based Planning**: Utilizes LLM-based planning to break down complex queries
 - **Memory Management**: Short-term memory to maintain context in multi-turn conversations
 - **Web Search Integration**: Capability to search the web for up-to-date information
@@ -28,6 +28,8 @@ Presented as part of a seminar on implementing Agentic RAG in production environ
 ## 🏗️ Architecture
 
 The project is structured using clean architecture principles with specialized components:
+
+![Flow Chart](docs/flow_chart.png)
 
 ```
 📦 src
@@ -136,20 +138,6 @@ A specialized agent for handling mathematical problems, equations, and calculati
 - Equation parsing
 - Formula application
 - Calculation verification
-
-## 📝 Seminar Notes
-
-This demo accompanies a seminar on "Implementing Agentic RAG in Production" which covers:
-
-- Benefits of specialized agents in AI systems
-- Router design for query classification
-- Architectural patterns for production deployment
-- Performance optimization techniques
-- Monitoring and evaluation strategies
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## 👥 Contributors
 

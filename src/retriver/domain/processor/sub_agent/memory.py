@@ -68,7 +68,7 @@ class MemoryManagerInput(BaseModel):
     """
 
     query_id: str
-    action: str  # merge, get, update, clear, cache, get_cache
+    action: str
     query: str = ''
     context: str = ''
     step: str = ''
@@ -227,13 +227,11 @@ class MemoryManager(BaseService):
         """
         memory = self.get_memory(query_id)
 
-        # If we don't have any existing information, just use the new context
         if not memory.complete_info:
             memory.complete_info = new_context
             memory.original_query = query
             return new_context
 
-        # If we have existing info, merge it with new context
         messages = [
             CompletionMessage(
                 role=MessageRole.SYSTEM,
@@ -259,7 +257,6 @@ class MemoryManager(BaseService):
         self.completion_tokens += int(response.metadata['completion_tokens'])
         self.total_tokens += int(response.metadata['total_tokens'])
 
-        # Update memory with merged context
         memory.complete_info = merged_context
 
         return merged_context
